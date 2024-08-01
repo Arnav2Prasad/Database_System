@@ -1,0 +1,631 @@
+Although we refer to the SQL language as a “query language,” it can do much more
+than just query a database. It can define the structure of the data, modify data in the
+database, and specify security constraints.
+
+Data-definition language (DDL). The SQL DDL provides commands for defining
+relation schemas, deleting relations, and modifying relation schemas.
+
+Data-manipulation language (DML). The SQL DML provides the ability to query
+information from the database and to insert tuples into, delete tuples from, and
+modify tuples in the database.
+
+Integrity. The SQL DDL includes commands for specifying integrity constraints
+that the data stored in the database must satisfy. Updates that violate integrity
+constraints are disallowed.
+
+View definition. The SQL DDL includes commands for defining views.
+
+Transaction control. SQL includes commands for specifying the beginning and end
+points of transactions.
+
+Embedded SQL and dynamic SQL. Embedded and dynamic SQL define how SQL
+statements can be embedded within general-purpose programming languages, such
+as C, C++, and Java.
+
+Authorization. The SQL DDL includes commands for specifying access rights to
+relations and views.
+
+
+
+                  SQL Data Definition
+The set of relations in a database are specified using a data-definition language (DDL).
+The SQL DDL allows specification of not only a set of relations, but also information
+about each relation, including:
+    • The schema for each relation.
+    • The types of values associated with each attribute.
+      The integrity constraints.
+    • The set of indices to be maintained for each relation.
+    • The security and authorization information for each relation.
+    • The physical storage structure of each relation on disk.
+
+
+                 Basic Types
+The SQL standard supports a variety of built-in types, including:
+    • char(n): A fixed-length character string with user-specified length n. The full form,
+    character, can be used instead.
+    
+    • varchar(n): A variable-length character string with user-specified maximum length
+    n. The full form, character varying, is equivalent.
+    
+    • int: An integer (a finite subset of the integers that is machine dependent). The full
+    form, integer, is equivalent.
+    
+    • smallint: A small integer (a machine-dependent subset of the integer type).
+    
+    • numeric(p, d): A fixed-point number with user-specified precision. The number
+    consists of p digits (plus a sign), and d of the p digits are to the right of the decimal
+    point. Thus, numeric(3,1) allows 44.5 to be stored exactly, but neither 444.5 nor
+    0.32 can be stored exactly in a field of this type.
+    
+    • real, double precision: Floating-point and double-precision floating-point numbers
+    with machine-dependent precision.
+    
+    • float(n): A floating-point number with precision of at least n digits.
+
+Each type may include a special value called the null value. A null value indicates
+an absent value that may exist but be unknown or that may not exist at all. In certain
+cases, we may wish to prohibit null values from being entered, as we shall see shortly.
+
+The char data type stores fixed-length strings. 
+Consider, for example, an attribute A of type char(10). 
+If we stored a string “Avi” in this attribute, seven spaces are appended to the string to make it 
+10 characters long. In contrast, if attribute B were of
+type varchar(10), and we stored “Avi” in attribute B, no spaces would be added. 
+
+When comparing two values of type char, if they are of different lengths, extra spaces are 
+automatically attached to the shorter one to make them the same size before comparison.
+
+When comparing a char type with a varchar type, one may expect extra spaces to
+be added to the varchar type to make the lengths equal, before comparison; however,
+this may or may not be done, depending on the database system. As a result, even if
+the same value “Avi” is stored in the attributes A and B above, a comparison A=B may
+return false. We recommend you always use the varchar type instead of the char type
+to avoid these problems.
+SQL also provides the nvarchar type to store multilingual data using the Unicode
+representation. However, many databases allow Unicode (in the UTF-8 representation)
+to be stored even in varchar types.
+
+
+
+                         Basic Schema Definition
+
+create table command:
+            create table department
+                (dept name varchar (20),
+                building varchar (15),
+                budget numeric (12,2),
+                primary key (dept name));
+
+
+The relation created above has three attributes, dept name, which is a character string
+of maximum length 20, building, which is a character string of maximum length 15,
+and budget, which is a number with 12 digits in total, two of which are after the decimal point.
+The create table command also specifies that the dept name attribute is the
+primary key of the department relation.
+
+The general form of the create table command is:
+      create table r
+          (A1 D1,
+          A2 D2,
+          ...,
+          An Dn,
+          ⟨integrity-constraint1⟩,
+          …,
+          ⟨integrity-constraintk⟩);
+
+where r is the name of the relation, each Ai is the name of an attribute in the schema of
+relation r, and Di is the domain of attribute Ai; 
+that is, Di specifies the type of attribute
+Ai along with optional constraints that restrict the set of allowed values for Ai.
+
+The semicolon shown at the end of the create table statements, as well as at the end
+of other SQL statements later in this chapter, is optional in many SQL implementations.
+SQL supports a number of different integrity constraints.
+
+PRIMARY KEY
+primary key (A....) : The primary-key specification says that attributes(A.....)
+form the primary key for the relation. The primary-key attributes
+are required to be 
+      nonnull 
+      and unique; 
+      
+that is, no tuple can have a null value for
+a primary-key attribute, and no two tuples in the relation can be equal on all the
+primary-key attributes.
+
+primary-key specification is optional.
+
+
+FOREIGN KEY references s
+The foreign key specification says that
+the values of attributes (A....) for any tuple in the relation must correspond to values of the primary key 
+attributes of some tuple in relation s.
+The definition of the course table has a declaration “foreign key
+(dept name) references department”. This foreign-key declaration specifies that for
+each course tuple, the department name specified in the tuple must exist in the primary key 
+attribute (dept name) of the department relation. Without this constraint,
+it is possible for a course to specify a nonexistent department name.
+
+
+                  NOT NULL
+ The not null constraint on an attribute specifies that the null value is not
+allowed for that attribute; in other words, the constraint excludes the null value
+from the domain of that attribute. For example, in Figure 3.1, the not null constraint on the name 
+attribute of the instructor relation ensures that the name of an
+instructor cannot be null.
+
+SQL prevents any update to the database that violates an integrity constraint. For
+example, if a newly inserted or modified tuple in a relation has null values for any
+primary-key attribute, or if the tuple has the same value on the primary-key attributes
+as does another tuple in the relation, SQL flags an error and prevents the update. Similarly, an insertion of a course tuple with a dept name value that does not appear in
+the department relation would violate the foreign-key constraint on course, and SQL
+prevents such an insertion from taking place.
+
+To remove a relation from an SQL database, we use the drop table command.
+The drop table command deletes all information about the dropped relation from the
+database. The command
+          drop table r;
+          
+is a more drastic action than
+          delete from r;
+
+The latter retains relation r, but deletes all tuples in r. The former deletes not only all
+tuples of r, but also the schema for r. After r is dropped, no tuples can be inserted into
+r unless it is re-created with the create table command.
+
+
+We use the alter table command to add attributes to an existing relation. All tuples
+in the relation are assigned null as the value for the new attribute. The form of the alter
+table command is
+        alter table r add A D;
+
+where r is the name of an existing relation, A is the name of the attribute to be added,
+and D is the type of the added attribute. We can drop attributes from a relation by the
+command
+          alter table r drop A;
+where r is the name of an existing relation, and A is the name of an attribute of the
+relation. Many database systems do not support dropping of attributes, although they
+will allow an entire table to be dropped.
+
+
+
+                Basic Structure of SQL Queries
+The basic structure of an SQL query consists of three clauses: select, from, and where.
+
+A query takes as its input the relations listed in the from clause, operates on them as
+specified in the where and select clauses, and then produces a relation as the result.
+
+ consider query, “Find the department names of all instructors,”
+which can be written as:
+        select dept name
+        from instructor;
+Since more than one instructor can belong to a department, a department name could
+appear more than once in the instructor relation. The result of the above query is a
+relation containing the department names, with duplicates.
+
+In the formal, mathematical definition of the relational model, a relation is a set.
+Thus, duplicate tuples would never appear in relations. In practice, duplicate elimination is time-consuming. 
+Therefore, SQL allows duplicates in database relations as well
+as in the results of SQL expressions. Thus, the preceding SQL query lists each department name once for 
+every tuple in which it appears in the instructor relation.
+
+In those cases where we want to force the elimination of duplicates, we insert the
+keyword distinct after select. We can rewrite the preceding query as:
+    select distinct dept name
+    from instructor;
+if we want duplicates removed. The result of the above query would contain each department name at most once.
+
+SQL allows us to use the keyword all to specify explicitly that duplicates are not
+removed:
+          select all dept name
+          from instructor;
+Since duplicate retention is the default, we shall not use all in our examples. To ensure
+the elimination of duplicates in the results of our example queries, we shall use distinct
+whenever it is necessary.
+
+
+
+                  Queries on Multiple Relations
+                  
+suppose we want to answer the query “Retrieve the names of all
+instructors, along with their department names and department building name.”
+        select name, instructor.dept name, building
+        from instructor, department
+        where instructor.dept name= department.dept name;
+
+The from clause by itself defines a Cartesian product of the relations listed in the
+clause. It is defined formally in terms of relational algebra, but it can also be understood
+as an iterative process that generates tuples for the result relation of the from clause.
+        for each tuple t1 in relation r1
+            for each tuple t2 in relation r2
+              …
+                for each tuple tm in relation rm
+                        Concatenate t1, t2, …, tm into a single tuple t
+                        Add t into the result relation
+
+
+1. Generate a Cartesian product of the relations listed in the from clause.
+2. Apply the predicates specified in the where clause on the result of Step 1
+3. For each tuple in the result of Step 2, output the attributes (or results of expressions) specified in the select clause..
+
+
+                    Additional Basic Operations
+
+            The Rename Operation
+
+old-name as new-name
+The as clause can appear in both the select and from clauses.
+
+For example, if we want the attribute name name to be replaced with the name
+instructor name, we can rewrite the preceding query as:
+        select name as instructor name, course id
+        from instructor, teaches
+        where instructor.ID= teaches.ID;
+The as clause is particularly useful in renaming relations. One reason to rename
+a relation is to replace a long relation name with a shortened version that is more
+convenient to use elsewhere in the query. 
+
+To illustrate, we rewrite the query “For all
+instructors in the university who have taught some course, find their names and the
+course ID of all courses they taught.”
+                select T.name, S.course id
+                from instructor as T, teaches as S
+                where T.ID= S.ID;
+
+Another reason to rename a relation is a case where we wish to compare tuples
+in the same relation. We then need to take the Cartesian product of a relation with
+itself and, without renaming, it becomes impossible to distinguish one tuple from the
+other. 
+
+Suppose that we want to write the query “Find the names of all instructors whose
+salary is greater than at least one instructor in the Biology department.” We can write
+the SQL expression:
+        select distinct T.name
+        from instructor as T, instructor as S
+        where T.salary > S.salary and S.dept name = 'Biology';
+Observe that we could not use the notation instructor.salary, since it would not be clear
+which reference to instructor is intended.
+
+In the above query, T and S can be thought of as copies of the relation instructor,
+but more precisely, they are declared as aliases, that is, as alternative names, for the
+relation instructor. 
+
+An identifier, such as T and S, that is used to rename a relation is
+referred to as a correlation name in the SQL standard, but it is also commonly referred
+to as a table alias, or a correlation variable, or a tuple variable.
+
+
+              String Operations
+SQL specifies strings by enclosing them in single quotes, for example, 'Computer'. A
+single quote character that is part of a string can be specified by using two single quote
+characters; for example, the string “It’s right” can be specified by 'It''s right'.
+
+The SQL standard specifies that the equality operation on strings is case sensitive;
+as a result, the expression 
+              “'comp. sci.' = 'Comp. Sci.'” evaluates to false. 
+
+However,
+some database systems, such as MySQL and SQL Server, do not distinguish uppercase
+from lowercase when matching strings; as a result, “'comp. sci.' = 'Comp. Sci.'” would
+evaluate to true on these systems. 
+This default behavior can, however, be changed,
+either at the database level or at the level of specific attributes.
+
+
+SQL also permits a variety of functions on character strings, such as 
+        concatenating (using “∥”) 
+        extracting substrings, 
+        finding the length of strings, 
+        converting strings to uppercase (using the function upper(s) where s is a string) and lowercase (using the
+function lower(s)), 
+        removing spaces at the end of the string (using trim(s)), and so on.
+        
+There are variations on the exact set of string functions supported by different
+database systems.
+
+
+Pattern matching can be performed on strings using the operator like. We describe
+patterns by using two special characters:
+      • Percent (%): The % character matches any substring.
+      • Underscore ( ): The character matches any character.
+      Patterns are case sensitive; 4 that is, uppercase characters do not match lowercase characters, or vice versa. 
+      To illustrate pattern matching, we consider the following examples:
+      • 'Intro%' matches any string beginning with “Intro”.
+      • '%Comp%' matches any string containing “Comp” as a substring, for example,
+      'Intro. to Computer Science', and 'Computational Biology'.
+      • '_ _ _' matches any string of exactly three characters.
+      • '_ _ _ %' matches any string of at least three characters
+
+SQL expresses patterns by using the like comparison operator. Consider the query
+“Find the names of all departments whose building name includes the substring 'Watson'.” This query can be written as:
+        select dept name
+        from department
+        where building like '%Watson%';
+
+For patterns to include the special pattern characters (that is, % and ), SQL allows the
+specification of an escape character. 
+The escape character is used immediately before
+a special pattern character to indicate that the special pattern character is to be treated
+like a normal character. We define the escape character for a like comparison using the
+escape keyword. To illustrate, consider the following patterns, which use a backslash
+(∖) as the escape character:
+          • like 'ab∖%cd%' escape '∖' matches all strings beginning with “ab%cd”.
+          • like 'ab∖∖cd%' escape '∖' matches all strings beginning with “ab∖cd”.
+
+SQL allows us to search for mismatches instead of matches by using the not like comparison operator. 
+Some implementations provide variants of the like operation that do
+not distinguish lower- and uppercase.
+Some SQL implementations, notably PostgreSQL, offer a similar to operation that
+provides more powerful pattern matching than the like operation; the syntax for specifying patterns is similar 
+to that used in Unix regular expressions.
+
+
+            Attribute Specification in the Select Clause
+The asterisk symbol “ * ” can be used in the select clause to denote “all attributes.”
+
+Thus, the use of instructor.* in the select clause of the query:
+            select instructor.*
+            from instructor, teaches
+            where instructor.ID= teaches.ID;
+indicates that all attributes of instructor are to be selected. A select clause of the form
+select * indicates that all attributes of the result relation of the from clause are selected.
+
+
+
+          Ordering the Display of Tuples
+SQL offers the user some control over the order in which tuples in a relation are displayed. 
+The order by clause causes the tuples in the result of a query to appear in sorted
+order. To list in alphabetic order all instructors in the Physics department, we write:
+                select name
+                from instructor
+                where dept name = 'Physics'
+                order by name;
+  
+By default, the order by clause lists items in ascending order. To specify the sort order,
+we may specify desc for descending order or asc for ascending order. 
+
+Furthermore,
+ordering can be performed on multiple attributes. Suppose that we wish to list the
+entire instructor relation in descending order of salary. If several instructors have the
+same salary, we order them in ascending order by name. We express this query in SQL
+as follows:
+            select *
+            from instructor
+            order by salary desc, name asc;
+
+
+              Where-Clause Predicates
+SQL includes a between comparison operator to simplify where clauses that specify
+that a value be less than or equal to some value and greater than or equal to some other
+value. 
+
+If we wish to find the names of instructors with salary amounts between $90,000
+and $100,000, we can use the between comparison to write:
+          select name
+          from instructor
+          where salary between 90000 and 100000;
+instead of:
+          select name
+          from instructor
+          where salary <= 100000 and salary >= 90000;
+
+Similarly, we can use the not between comparison operator.
+
+
+SQL permits us to use the notation (v1,v2, …,vn) to denote a tuple of arity n containing 
+values v1,v2, …,vn; the notation is called a row constructor. The comparison
+operators can be used on tuples, and the ordering is defined lexicographically. 
+For example, (a1, a2) <= (b1, b2) is true if a1 <= b1 and a2 <= b2; similarly, the two tuples
+are equal if all their attributes are equal. Thus, the SQL query:
+        select name, course id
+        from instructor, teaches
+        where instructor.ID= teaches.ID and dept name = 'Biology';
+
+can be rewritten as follows:
+        select name, course id
+        from instructor, teaches
+        where (instructor.ID, dept name) = (teaches.ID, 'Biology');
+
+
+
+          Set Operations
+The SQL operations union, intersect, and except operate on relations and correspond to
+the mathematical set operations ∪, ∩, and −. We shall now construct queries involving
+the union, intersect, and except operations over two sets.
+
+• The set of all courses taught in the Fall 2017 semester:
+            select course id
+            from section
+            where semester = 'Fall' and year= 2017;
+            
+• The set of all courses taught in the Spring 2018 semester:
+            select course id
+            from section
+            where semester = 'Spring' and year= 2018;
+
+In our discussion that follows, we shall refer to the relations obtained as the result of the
+preceding queries as c1 and c2, respectively, 
+
+
+                The Union Operation
+To find the set of all courses taught either in Fall 2017 or in Spring 2018, or both, we
+write the following query. Note that the parentheses we include around each selectfrom-where statement below are 
+optional but useful for ease of reading; some databases
+do not allow the use of the parentheses, in which case they may be dropped.
+          (select course id
+          from section
+          where semester = 'Fall' and year= 2017)
+          union
+          (select course id
+          from section
+          where semester = 'Spring' and year= 2018);
+
+The union operation automatically eliminates duplicates, unlike the select clause. 
+
+Thus,
+using the section relation of Figure 2.6, where two sections of CS-319 are offered in
+Spring 2018, and a section of CS-101 is offered in the Fall 2017 as well as in the Spring
+2018 semesters, CS-101 and CS-319 appear only once in the result.
+
+If we want to retain all duplicates, we must write union all in place of union:
+                (select course id
+                from section
+                where semester = 'Fall' and year= 2017)
+                union all
+                (select course id
+                from section
+                where semester = 'Spring' and year= 2018);
+The number of duplicate tuples in the result is equal to the total number of duplicates
+that appear in both c1 and c2. So, in the above query, each of CS-319 and CS-101 would
+be listed twice. As a further example, if it were the case that four sections of ECE-101
+were taught in the Fall 2017 semester and two sections of ECE-101 were taught in the
+Spring 2018 semester, then there would be six tuples with ECE-101 in the result.
+
+
+
+              The Intersect Operation
+To find the set of all courses taught in both the Fall 2017 and Spring 2018, we write:
+            (select course id
+            from section
+            where semester = 'Fall' and year= 2017)
+            intersect
+            (select course id
+            from section
+            where semester = 'Spring' and year= 2018);
+The result relation, shown in Figure 3.11, contains only one tuple with CS-101. 
+
+The intersect operation automatically eliminates duplicates.
+
+For example, if it were the case
+that four sections of ECE-101 were taught in the Fall 2017 semester and two sections of
+ECE-101 were taught in the Spring 2018 semester, then there would be only one tuple
+with ECE-101 in the result.
+
+If we want to retain all duplicates, we must write intersect all in place of intersect:
+          (select course id
+          from section
+          where semester = 'Fall' and year= 2017)
+          intersect all
+          (select course id
+          from section
+          where semester = 'Spring' and year= 2018);
+
+The number of duplicate tuples that appear in the result is equal to the minimum number of duplicates in both c1 and c2. 
+
+For example, if four sections of ECE-101 were taught
+in the Fall 2017 semester and two sections of ECE-101 were taught in the Spring 2018
+semester, then there would be two tuples with ECE-101 in the result.
+
+
+                  The Except Operation
+To find all courses taught in the Fall 2017 semester but not in the Spring 2018 semester,
+we write:
+                (select course id
+                from section
+                where semester = 'Fall' and year= 2017)
+                except
+                (select course id
+                from section
+                where semester = 'Spring' and year= 2018);
+
+Note that this is exactly relation c1
+of Figure 3.8 except that the tuple for CS-101 does not appear. The except operation
+outputs all tuples from its first input that do not occur in the second input; that is, 
+
+          it performs set difference. 
+
+The operation automatically eliminates duplicates in the inputs before performing set difference. 
+
+
+For example, if four sections of ECE-101 were taught
+in the Fall 2017 semester and two sections of ECE-101 were taught in the Spring 2018
+semester, the result of the except operation would not have any copy of ECE-101.
+
+If we want to retain duplicates, we must write except all in place of except:
+          (select course id
+          from section
+          where semester = 'Fall' and year= 2017)
+          except all
+          (select course id
+          from section
+          where semester = 'Spring' and year= 2018);
+The number of duplicate copies of a tuple in the result is equal to the number of duplicate 
+copies in c1 minus the number of duplicate copies in c2, provided that the difference is positive. 
+
+Thus, if four sections of ECE-101 were taught in the Fall 2017 semester
+and two sections of ECE-101 were taught in Spring 2018, then there are two tuples with
+ECE-101 in the result. If, however, there were two or fewer sections of ECE-101 in the
+Fall 2017 semester and two sections of ECE-101 in the Spring 2018 semester, there is
+no tuple with ECE-101 in the result.
+
+
+
+                    Null Values
+Null values present special problems in relational operations, including arithmetic operations, comparison operations, and set operations.
+
+The result of an arithmetic expression (involving, for example, +, −, ∗, or ∕) is null
+if any of the input values is null. For example, if a query has an expression r.A+ 5, and
+r.A is null for a particular tuple, then the expression result must also be null for that
+tuple.
+
+
+Comparisons involving nulls are more of a problem. For example, consider the
+comparison “1 < null”. 
+It would be wrong to say this is true since we do not know
+what the null value represents. 
+
+But it would likewise be wrong to claim this expression
+is false; if we did, “not (1 < null)” would evaluate to true, which does not make sense.
+SQL therefore treats as unknown the result of any comparison involving a null value
+
+This creates a third logical value in addition to true and false.
+Since the predicate in a where clause can involve Boolean operations such as and,
+or, and not on the results of comparisons, the definitions of the Boolean operations are
+extended to deal with the value unknown.
+
+            and: The result of true and unknown is unknown, false and unknown is false, while
+                  unknown and unknown is unknown.
+            or: The result of true or unknown is true, false or unknown is unknown, while unknown or unknown is unknown.
+            not: The result of not unknown is unknown.
+
+You can verify that if r.A is null, then “1 < r.A” as well as “not (1 < r.A)” evaluate
+to unknown.
+
+If the where clause predicate evaluates to either false or unknown for a tuple, that
+tuple is not added to the result.
+
+SQL uses the special keyword null in a predicate to test for a null value. Thus, to
+find all instructors who appear in the instructor relation with null values for salary, we
+write:
+          select name
+          from instructor
+          where salary is null;
+The predicate is not null succeeds if the value on which it is applied is not null.
+
+SQL allows us to test whether the result of a comparison is unknown, rather than
+true or false, by using the clauses is unknown and is not unknown.
+
+For example,
+            select name
+            from instructor
+            where salary > 10000 is unknown;
+            
+When a query uses the select distinct clause, duplicate tuples must be eliminated.
+
+For this purpose, when comparing values of corresponding attributes from two tuples,
+the values are treated as identical if either both are non-null and equal in value, or both
+are null. 
+Thus, two copies of a tuple, such as {('A',null), ('A',null)}, are treated as being
+identical, even if some of the attributes have a null value. 
+
+Using the distinct clause then
+retains only one copy of such identical tuples. Note that the treatment of null above is
+different from the way nulls are treated in predicates, where a comparison “null=null”
+would return unknown, rather than true.
+
+The approach of treating tuples as identical if they have the same values for all
+attributes, even if some of the values are null, is also used for the set operations union,
+intersection, and except.
+
+              
+
