@@ -435,19 +435,516 @@ alternative way to write the query, using the exists construct, is as follows:
 
 
           Test for the Absence of Duplicate Tuples
+SQL includes a Boolean function for testing whether a subquery has duplicate tuples
+in its result. 
+
+The unique construct11 returns the value true if the argument subquery
+contains no duplicate tuples. 
+
+Using the unique construct, 
+      we can write the query “Find
+all courses that were offered at most once in 2017” as follows:
+    
+    select T.course id
+    from course as T
+    where unique (select R.course id
+        from section as R
+        where T.course id= R.course id and
+        R.year = 2017);
+
+Note that if a course were not offered in 2017, the subquery would return an empty
+result, and the unique predicate would evaluate to true on the empty set.
+An equivalent version of this query not using the unique construct is:
+          
+          select T.course id
+          from course as T
+          where 1 >= (select count(R.course id)
+                from section as R
+                where T.course id= R.course id and
+                R.year = 2017);
+
+We can test for the existence of duplicate tuples in a subquery by using the not
+unique construct. To illustrate this construct, consider the query “Find all courses that
+were offered at least twice in 2017” as follows:
+
+          select T.course id
+          from course as T
+          where not unique (select R.course id
+              from section as R
+              where T.course id= R.course id and
+              R.year = 2017);
+
+Formally, the unique test on a relation is defined to fail if and only if the relation
+contains two distinct tuples t1 and t2 such that t1 = t2. Since the test t1 = t2 fails if
+any of the fields of t1 or t2 are null, it is possible for unique to be true even if there are
+multiple copies of a tuple, as long as at least one of the attributes of the tuple is null.
+
+
+                    Subqueries in the From Clause
+SQL allows a subquery expression to be used in the from clause. The key concept applied here is that any select-from-where expression returns a relation as a result and,
+therefore, can be inserted into another select-from-where anywhere that a relation can
+appear.
+
+Consider the query “Find the average instructors’ salaries of those departments
+where the average salary is greater than $42,000.” We wrote this query in Section 3.7
+by using the having clause. 
+We can now rewrite this query, without using the having
+clause, by using a subquery in the from clause, as follows:
+
+        select dept name, avg salary
+        from (select dept name, avg (salary) as avg salary
+            from instructor
+            group by dept name)
+        where avg salary > 42000;
+
+The subquery generates a relation consisting of the names of all departments and their
+corresponding average instructors’ salaries. The attributes of the subquery result can
+be used in the outer query, as can be seen in the above example.
+
+Note that we do not need to use the having clause, since the subquery in the from
+clause computes the average salary, and the predicate that was in the having clause
+earlier is now in the where clause of the outer query.
+
+We can give the subquery result relation a name, and rename the attributes, using
+the as clause, as illustrated below.
+
+We can give the subquery result relation a name, and rename the attributes, using
+the as clause, as illustrated below.
+          
+          select dept name, avg salary
+          from (select dept name, avg (salary)
+          from instructor
+          group by dept name)
+          as dept avg (dept name, avg salary)
+          where avg salary > 42000;
+
+The subquery result relation is named dept avg, with the attributes dept name and avg
+salary.
+
+Nested subqueries in the from clause are supported by most but not all SQL implementations. Note that some SQL implementations, notably MySQL and PostgreSQL,
+require that each subquery relation in the from clause must be given a name, even if the
+name is never referenced; Oracle allows a subquery result relation to be given a name
+(with the keyword as omitted) but does not allow renaming of attributes of the relation.
+
+An easy workaround for that is to do the attribute renaming in the select clause of the
+subquery; in the above query, the select clause of the subquery would be replaced by
+            
+        select dept name, avg(salary) as avg salary
+
+      and
+                “as dept_avg (dept name, avg salary)”
+      would be replaced by
+                “as dept_avg”
+
+As another example, suppose we wish to find the maximum across all departments
+of the total of all instructors’ salaries in each department. The having clause does not
+help us in this task, but we can write this query easily by using a subquery in the from
+clause, as follows:
+          
+          select max (tot salary)
+          from (select dept name, sum(salary)
+              from instructor
+              group by dept name) as dept total (dept name, tot salary);
+
+We note that nested subqueries in the from clause cannot use correlation variables
+from other relations in the same from clause. However, the SQL standard, starting with
+SQL:2003, allows a subquery in the from clause that is prefixed by the lateral keyword
+to access attributes of preceding tables or subqueries in the same from clause. 
+
+For example, if we wish to print the names of each instructor, along with their salary and
+the average salary in their department, we could write the query as follows:
+          
+        select name, salary, avg salary
+          from instructor I1, lateral (select avg(salary) as avg salary
+                    from instructor I2
+                    where I2.dept name= I1.dept name);
+
+Without the lateral clause, the subquery cannot access the correlation variable I1 from
+the outer query. Only the more recent implementations of SQL support the lateral
+clause.
+
+
+
+            The With Clause
+
+The with clause provides a way of defining a temporary relation whose definition is
+available only to the query in which the with clause occurs. 
+
+Consider the following query, which finds those departments with the maximum budget.
+              
+              with max_budget(value) as
+                    (select max(budget)
+                    from department)
+              select budget
+              from department, max budget
+              where department.budget = max budget.value;
+
+The with clause in the query defines the temporary relation max_budget containing the
+results of the subquery defining the relation. 
+
+We could have written the preceding query by using a nested subquery in either the
+from clause or the where clause. 
+However, using nested subqueries would have made
+the query harder to read and understand. The with clause makes the query logic clearer;
+it also permits this temporary relation to be used in multiple places within a query.
+
+For example, suppose we want to find all departments where the total salary is
+greater than the average of the total salary at all departments. 
+We can write the query using the with clause as follows:
+
+          with dept total (dept name, value) as
+                (select dept name, sum(salary)
+                from instructor
+                group by dept name),
+          dept total avg(value) as
+                (select avg(value)
+                from dept total)
+          select dept name
+          from dept total, dept total avg
+          where dept total.value > dept total avg.value;
+
+We can create an equivalent query without the with clause, but it would be 
+more complicated and harder to understand. You can write the equivalent query as an exercise.
+
+
+
+              Scalar Subqueries
+SQL allows subqueries to occur wherever an expression returning a value is permitted,
+provided the subquery returns only one tuple containing a single attribute; such subqueries are called scalar subqueries. 
+
+For example, a subquery can be used in the select clause as illustrated in the following example 
+that lists all departments along with the number of instructors in each department:
+
+              select dept name,
+                    (select count(*)
+                    from instructor
+                    where department.dept name = instructor.dept name)
+                    as num instructors
+              from department;
+
+The subquery in this example is guaranteed to return only a single value since it has
+a count(*) aggregate without a group by. The example also illustrates the usage of 
+correlation variables, that is, attributes of relations in the from clause of the outer query,
+such as department.dept name in the above example.
+
+Scalar subqueries can occur in select, where, and having clauses. Scalar subqueries
+may also be defined without aggregates. It is not always possible to figure out at compile
+time if a subquery can return more than one tuple in its result; if the result has more
+than one tuple when the subquery is executed, a run-time error occurs.
+
+Note that technically the type of a scalar subquery result is still a relation, even if
+it contains a single tuple. However, when a scalar subquery is used in an expression
+where a value is expected, SQL implicitly extracts the value from the single attribute of
+the single tuple in the relation and returns that value.
+
+
+          Scalar Without a From Clause
+Certain queries require a calculation but no reference to any relation. Similarly, certain
+queries may have subqueries that contain a from clause without the top-level query
+needing a from clause.
+
+As an example, suppose we wish to find the average number of sections taught (regardless of year or semester) per instructor, 
+with sections taught by multiple instructors
+counted once per instructor. We need to count the number of tuples in teaches to find
+the total number of sections taught and count the number of tuples in instructor to find
+the number of instructors. Then a simple division gives us the desired result. One might
+write this as:
+            
+            (select count (*) from teaches)/(select count (*) from instructor)
+            from dual;
+
+While this is legal in some systems, others will report an error due to the lack of a
+from clause. In the latter case, a special dummy relation called, for example, dual can
+be created, containing a single tuple. This allows the preceding query to be written as:
+select (select count (*) from teaches)/(select count (*) from instructor)
+from dual;
+Oracle provides a predefined relation called dual, containing a single tuple, for uses
+such as the above (the relation has a single attribute, which is not relevant for our
+purposes); you can create an equivalent relation if you use any other database.
+Since the above queries divide one integer by another, the result would, on most
+databases, be an integer, which would result in loss of precision. If you wish to get the
+result as a floating point number, you could multiply one of the two subquery results by
+1.0 to convert it to a floating point number, before the division operation is performed.
 
 
 
 
 
+                  Modification of the Database
+
+                      Deletion
+A delete request is expressed in much the same way as a query. 
+We can delete only whole tuples; we cannot delete values on only particular attributes. 
+
+SQL expresses a deletion by:
+        
+        delete from r
+        where P;
+
+where P represents a predicate and r represents a relation. 
+
+The delete statement first finds all tuples t in r for which P(t) is true, and then deletes them from r. 
+
+The where clause can be omitted, in which case all tuples in r are deleted.
+
+Note that a delete command operates on only one relation. If we want to delete
+tuples from several relations, we must use one delete command for each relation. 
+
+The predicate in the where clause may be as complex as a select command’s where clause.
+
+At the other extreme, the where clause may be empty. The request:
+                
+              delete from instructor;
+
+deletes all tuples from the instructor relation. The instructor relation itself still exists,
+but it is empty.
+
+
+Here are examples of SQL delete requests:
+
+Delete all tuples in the instructor relation pertaining to instructors in the Finance
+department.
+              
+              delete from instructor
+              where dept name = 'Finance';
+
+Delete all instructors with a salary between $13,000 and $15,000.
+                  
+                  delete from instructor
+                  where salary between 13000 and 15000;
+
+
+Delete all tuples in the instructor relation for those instructors associated with a
+department located in the Watson building.
+                
+                delete from instructor
+                where dept name in (select dept name
+                from department
+                where building = 'Watson');
+
+This delete request first finds all departments located in Watson and then deletes
+all instructor tuples pertaining to those departments.
+
+Note that, although we may delete tuples from only one relation at a time, we may
+reference any number of relations in a select-from-where nested in the where clause of a
+delete. 
+
+The delete request can contain a nested select that references the relation from
+which tuples are to be deleted. 
+For example, suppose that we want to delete the records
+of all instructors with salary below the average at the university. We could write:
+ 
+            delete from instructor
+            where salary < (select avg (salary)
+            from instructor);
+
+The delete statement first tests each tuple in the relation instructor to check whether
+the salary is less than the average salary of instructors in the university. Then, all tuples
+that pass the test—that is, represent an instructor with a lower-than-average salary—are
+deleted. 
+
+Performing all the tests before performing any deletion is important—if some
+tuples are deleted before other tuples have been tested, the average salary may change,
+and the final result of the delete would depend on the order in which the tuples were
+processed!
 
 
 
+                                      Insertion
+To insert data into a relation, we either specify a tuple to be inserted or write a query
+whose result is a set of tuples to be inserted. The attribute values for inserted tuples
+must be members of the corresponding attribute’s domain. Similarly, tuples inserted
+must have the correct number of attributes.
+
+The simplest insert statement is a request to insert one tuple. Suppose that we wish
+to insert the fact that there is a course CS-437 in the Computer Science department
+with title “Database Systems” and four credit hours. We write:
+
+              insert into course
+              values ('CS-437', 'Database Systems', 'Comp. Sci.', 4);
 
 
+In this example, the values are specified in the order in which the corresponding attributes are listed in the relation schema. 
+
+For the benefit of users who may not remember the order of the attributes, SQL allows the attributes to be specified as part of
+the insert statement. For example, the following SQL insert statements are identical in
+function to the preceding one:
+
+        insert into course (course id, title, dept name, credits)
+        values ('CS-437', 'Database Systems', 'Comp. Sci.', 4);
+        
+        insert into course (title, course id, credits, dept name)
+        values ('Database Systems', 'CS-437', 4, 'Comp. Sci.');
 
 
+More generally, we might want to insert tuples on the basis of the result of a query.
+Suppose that we want to make each student in the Music department who has earned
+more than 144 credit hours an instructor in the Music department with a salary of
+$18,000. We write:
 
+            insert into instructor
+            select ID, name, dept name, 18000
+            from student
+            where dept name = 'Music' and tot cred > 144;
+
+Instead of specifying a tuple as we did earlier in this section, we use a select to specify a
+set of tuples. 
+
+SQL evaluates the select statement first, giving a set of tuples that is then
+inserted into the instructor relation. Each tuple has an ID, a name, a dept name (Music),
+and a salary of $18,000.
+
+It is important that the system evaluate the select statement fully before it performs
+any insertions. If it were to carry out some insertions while the select statement was
+being evaluated, a request such as:
+
+            insert into student
+            select *
+            from student;
+
+might insert an infinite number of tuples, if the primary key constraint on student were
+absent. 
+Without the primary key constraint, the request would insert the first tuple in
+student again, creating a second copy of the tuple. Since this second copy is part of
+student now, the select statement may find it, and a third copy would be inserted into
+student. The select statement may then find this third copy and insert a fourth copy, and
+so on, forever. Evaluating the select statement completely before performing insertions
+avoids such problems. 
+Thus, the above insert statement would simply duplicate every
+tuple in the student relation if the relation did not have a primary key constraint.
+
+
+Our discussion of the insert statement considered only examples in which a value
+is given for every attribute in inserted tuples. 
+It is possible for inserted tuples to be given
+values on only some attributes of the schema. The remaining attributes are assigned a
+null value denoted by null. Consider the request:
+              
+              insert into student
+              values ('3003', 'Green', 'Finance', null);
+
+The tuple inserted by this request specified that a student with ID “3003” is in the
+Finance department, but the tot cred value for this student is not known.
+
+Most relational database products have special “bulk loader” utilities to insert a
+large set of tuples into a relation. These utilities allow data to be read from formatted text files, and they can execute much faster than an equivalent sequence of insert
+statements.
+
+
+                  Updates
+In certain situations, we may wish to change a value in a tuple without changing all
+values in the tuple. 
+For this purpose, the update statement can be used. As we could
+for insert and delete, we can choose the tuples to be updated by using a query.
+
+Suppose that annual salary increases are being made, and salaries of all instructors
+are to be increased by 5 percent. We write:
+
+                  update instructor
+                  set salary= salary * 1.05;
+
+The preceding update statement is applied once to each of the tuples in the instructor
+relation.
+
+If a salary increase is to be paid only to instructors with a salary of less than
+$70,000, we can write:
+
+                update instructor
+                set salary = salary * 1.05
+                where salary < 70000;
+
+In general, the where clause of the update statement may contain any construct legal
+in the where clause of the select statement (including nested selects). 
+
+As with insert and delete, a nested select within an update statement may reference the relation that
+is being updated. As before, SQL first tests all tuples in the relation to see whether
+they should be updated, and it carries out the updates afterward. 
+
+For example, we can
+write the request “Give a 5 percent salary raise to instructors whose salary is less than
+average” as follows:
+                
+                update instructor
+                set salary = salary * 1.05
+                where salary < (select avg (salary)
+                from instructor);
+
+
+Let us now suppose that all instructors with salary over $100,000 receive a 3 percent raise, whereas all others receive a 5 percent raise. We could write two update
+statements:
+
+            update instructor
+            set salary = salary * 1.03
+            where salary > 100000;
+
+            update instructor
+            set salary = salary * 1.05
+            where salary <= 100000;
+
+Note that the order of the two update statements is important. If we changed the order
+of the two statements, an instructor with a salary just under $100,000 would receive a
+raise of over 8 percent.
+
+SQL provides a case construct that we can use to perform both updates with a
+single update statement, avoiding the problem with the order of updates.
+
+update instructor
+set salary = case
+                when salary <= 100000 then salary * 1.05
+                else salary * 1.03
+              end
+
+
+The general form of the case statement is as follows:
+case
+          when pred1 then result1
+          when pred2 then result2
+          …
+          when predn then resultn
+          else result0
+end
+
+The operation returns resulti... where i is the first of pred1, pred2, ..., predn that is satisfied; if none of the predicates is satisfied, the operation returns result0. Case statements
+can be used in any place where a value is expected.
+
+
+Scalar subqueries are useful in SQL update statements, where they can be used in
+the set clause. We illustrate this using the student and takes relations that we introduced
+in Chapter 2. 
+
+Consider an update where we set the tot cred attribute of each student
+tuple to the sum of the credits of courses successfully completed by the student. 
+
+We assume that a course is successfully completed if the student has a grade that is neither
+'F' nor null. To specify this update, we need to use a subquery in the set clause, as
+shown below:
+
+          update student
+          set tot cred = (
+          select sum(credits)
+          from takes, course
+          where student.ID= takes.ID and
+          takes.course id = course.course id and
+          takes.grade <> 'F' and
+          takes.grade is not null);
+
+In case a student has not successfully completed any course, the preceding statement
+would set the tot cred attribute value to null. 
+To set the value to 0 instead, we could
+use another update statement to replace null values with 0; a better alternative is to
+replace the clause “select sum(credits)” in the preceding subquery with the following
+select clause using a case expression:
+
+        select case
+              when sum(credits) is not null then sum(credits)
+              else 0
+              end
+
+Many systems support a coalesce function, which we describe in more detail later,
+in Section 4.5.2, which provides a concise way of replacing nulls by other values. In
+the above example, we could have used coalesce(sum(credits), 0) instead of the case
+expression; this expression would return the aggregate result sum(credits) if it is not
+null, and 0 otherwise.
 
 
 
