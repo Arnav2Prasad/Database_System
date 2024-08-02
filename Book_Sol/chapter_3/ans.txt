@@ -250,6 +250,85 @@ group by customer.customer_name
 having count(customer.ID) > 0;
 
 
+Question9:
+
+(a)
+select employee.ID, employee.name , employee.city
+from employee, works
+where employee.ID = works.ID and works.company_name = "First Bank Corporation";
+
+(b)
+select employee.ID, employee.name , employee.city
+from employee, works
+where employee.ID = works.ID and works.company_name = "First Bank Corporation" and works.salary>10000;
+
+(c)
+select employee.id
+from employee, works
+where employee.id = works.id and works.company_name != "First Bank Corporation";
+
+
+(d)
+select employee.id
+from employee, works
+where employee.id = works.id and works.salary > all (select works.salary
+from works where works.company_name = "Small Bank Corporation");
+
+(e)
+
+with (select company.city from company where company.company_name = "Small Bank Corporation") as aa
+
+select company.company_name 
+from company
+where company.city in aa;
+
+
+(f)
+with (
+select company_name,count(ID)
+from works
+groupby company_name
+) as aa;
+
+
+select company_name
+from aa
+where count(ID) = select max(count(ID)) from aa;
+
+
+
+(g)
+with (
+select avg(salary)
+from works
+where works.company_name = "First Bank Corporation"
+) as aa;
+
+with (
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
