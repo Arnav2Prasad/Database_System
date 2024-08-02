@@ -170,6 +170,94 @@ and accident.year = '2017');
 ) 
 
 (b)
+delete from car
+where year = 2010 and licence_plate in (select licence_plate from owns 
+                  where owns.driver_id = '12345');
+
+
+
+Question5:
+(a)
+select ID, 
+      case
+            when score<40 then 'F'
+            when score<60 then 'C'
+            when score<80 then 'B'
+      end
+from marks
+
+(b)
+
+with (
+      select ID, 
+            case
+                  when score<40 then 'F'
+                  when score<60 then 'C'
+                  when score<80 then 'B'
+            end as grade
+      from marks
+
+) as abc
+select grade,count(ID)
+from abc
+group by grade
+
+
+Question6:
+select dept_name
+from department
+where lower(dept_name) like "%sci%" 
+
+
+Question8:
+
+(a) 
+with ( select ID from depositer) as aa
+with ( select ID from borrower) as bb
+
+select id 
+from customer, borrower,depositor
+where cutomer.ID in aa  and customer.id not in bb
+
+
+(b)
+select id
+from customer as c1
+where c1(customer_street , customer_city) in (select  c2.customer_street , c2.customer_city
+                        from customer as c2
+                        where c2.ID = '12345');
+
+
+(c)
+
+with (select ID from depositor) as aa
+with (select account_number from depositor) as bb
+
+select distinct branch_name
+from branch
+where 
+
+
+
+with (
+select customer.ID,customer.customer_name where customer.customer_city = "Harrison" and cutomer.ID = depositor.ID 
+and depositor.account_number =  account.account_number
+) as yy
+
+select customer.customer_name
+from yy
+group by customer.customer_name
+having count(customer.ID) > 0;
+
+
+
+
+
+
+
+
+
+
 
 
 
