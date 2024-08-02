@@ -1,0 +1,178 @@
+Question1:
+
+(a) 
+select title 
+from course
+where dept_name = "Comp. Sci." and credits=3;
+
+(b)
+select distinct takes.ID 
+from instructor,teaches,section,takes
+where instructor.ID = teaches.ID and 
+      instructor.name = "Einstein"
+      teaches.course_id = section.course_id and
+      teaches.sec_id = section.course_id and 
+      teaches.semester = section.semester and 
+      teaches.year = section.year and 
+
+      takes.ID = section.course_id and
+      takes.sec_id = section.course_id and 
+      takes.semester = section.semester and 
+      takes.year = section.year;
+
+--previous query with 4 tables.
+-- but the primary keys were same so section can be ommitted
+
+--No need of section table
+
+
+select distinct takes.ID 
+from instructor,teaches,takes
+where instructor.ID = teaches.ID and 
+      instructor.name = "Einstein"
+
+      takes.ID = teaches.course_id and
+      takes.sec_id = teaches.course_id and 
+      takes.semester = teaches.semester and 
+      takes.year = teaches.year;
+
+
+
+(c)
+select max(salary)
+from instructor;
+
+
+(d)
+select * 
+from instructor
+where salary = (select max(salary)
+      from instructor);
+
+(e)
+select section.sec_id,count(takes.ID)
+from takes,section
+where takes.course_i = section.course_id and
+      takes.sec_id = section.course_id and 
+      takes.semester = section.semester and 
+      takes.year = section.year
+
+      year=2017 and semester="Fall"
+groupby section.sec_id;
+
+(f)
+
+select max(abc)
+from  ( select count(takes.ID)
+          from takes,section
+          where takes.ID = section.course_id and
+                takes.sec_id = section.course_id and 
+                takes.semester = section.semester and 
+                takes.year = section.year
+          
+                year=2017 and semester="Fall"
+          groupby sec_id  as abc);
+
+(g)
+
+select max(abc)
+from  ( select count(takes.ID) , section.sec_id
+          from takes,section
+          where takes.ID = section.course_id and
+                takes.sec_id = section.course_id and 
+                takes.semester = section.semester and 
+                takes.year = section.year
+          
+                year=2017 and semester="Fall"
+          groupby sec_id  as abc);
+
+
+
+Question2:
+
+(a) 
+select 
+            sum(course.credits * grade_points.points) 
+            from grade_points,takes,course  
+            where grade_points.grade = takes.grade 
+            and take.ID = '12345'
+            and take.course_id = course.course_id); 
+
+(b)
+with (
+select 
+            sum(course.credits * grade_points.points) 
+            from grade_points,takes,course  
+            where grade_points.grade = takes.grade 
+            and take.ID = '12345'
+            and take.course_id = course.course_id); 
+
+) as abc
+
+select abc/student.tot_cred
+from student, takes , abc
+where takes.ID = '12345' and takes.ID = student.ID
+
+
+(c)
+
+with (
+select 
+            takes.ID as id , sum(course.credits * grade_points.points) 
+            from grade_points,takes,course  
+            where grade_points.grade = takes.grade 
+            and take.course_id = course.course_id); 
+
+) as abc
+
+select takes.ID , abc/student.tot_cred
+from student, takes , abc
+where abc.id = student.ID
+
+
+(d)
+
+
+
+
+Question3: 
+
+(a) 
+update instructor
+set salary = salary*1.1
+where dept_name = "Comp. Sci.";
+
+(b)
+delete from course
+where course.course_id not in (select section.course_id from section);
+
+(c)
+insert into instructor
+values(select ID, name,dept_name, 10000 from student where tot_credit > 100 );
+
+
+Question4:
+
+person (driver id, name, address)
+car (license plate, model, year)
+accident (report number, year, location)
+owns (driver id, license plate)
+participated (report number, license plate, driver id, damage amount)
+
+(a)
+with (
+
+select count(owns.driver_id)
+from owns, participated,accident
+where owns.license_plate = participated.license_plate and accident.report_number = particpated.report_number
+and accident.year = '2017');
+
+) 
+
+(b)
+
+
+
+
+
+
