@@ -1,0 +1,296 @@
+                      Transactions
+
+A transaction consists of a sequence of query and/or update statements. 
+The SQL standard specifies that a transaction begins implicitly when an SQL statement is executed.
+
+One of the following SQL statements must end the transaction:
+    • "Commit work" commits the current transaction; that is, it makes the updates performed 
+    by the transaction become permanent in the database. After the transaction is committed, a new 
+    transaction is automatically started.
+    
+    • "Rollback work" causes the current transaction to be rolled back; that is, it undoes
+    all the updates performed by the SQL statements in the transaction. Thus, the
+    database state is restored to what it was before the first statement of the transaction
+    was executed.
+    
+The keyword "work" is optional in both the statements.
+
+Transaction rollback is useful if some error condition is detected during execution
+of a transaction. Commit is similar, in a sense, to saving changes to a document that
+is being edited, while rollback is similar to quitting the edit session without saving
+changes. 
+Once a transaction has executed commit work, its effects can no longer be
+undone by rollback work. The database system guarantees that in the event of some
+failure, such as an error in one of the SQL statements, a power outage, or a system
+crash, a transaction’s effects will be rolled back if it has not yet executed commit work.
+In the case of power outage or other system crash, the rollback occurs when the system
+restarts.
+
+For instance, consider a banking application where we need to transfer money
+from one bank account to another in the same bank. To do so, we need to update
+two account balances, subtracting the amount transferred from one, and adding it to
+the other. If the system crashes after subtracting the amount from the first account
+but before adding it to the second account, the bank balances will be inconsistent. A
+similar problem occurs if the second account is credited before subtracting the amount
+from the first account and the system crashes just after crediting the amount.
+
+As another example, consider our running example of a university application. We
+assume that the attribute tot_cred of each tuple in the student relation is kept up-todate 
+by modifying it whenever the student successfully completes a course. To do so,
+whenever the takes relation is updated to record successful completion of a course by a
+student (by assigning an appropriate grade), the corresponding student tuple must also
+be updated. If the application performing these two updates crashes after one update
+is performed, but before the second one is performed, the data in the database will be
+inconsistent.
+
+By either committing the actions of a transaction after all its steps are completed,
+or rolling back all its actions in case the transaction could not complete all its actions
+successfully, the database provides an abstraction of a transaction as being atomic, that
+is, indivisible. Either all the effects of the transaction are reflected in the database or
+none are (after rollback).
+
+Applying the notion of transactions to the above applications, the update statements should be 
+executed as a single transaction. An error while a transaction executes
+one of its statements would result in undoing the effects of the earlier statements of the
+transaction so that the database is not left in a partially updated state.
+
+If a program terminates without executing either of these commands, the updates
+are either committed or rolled back. The standard does not specify which of the two
+happens, and the choice is implementation dependent.
+
+In many SQL implementations, including MySQL and PostgreSQL, by default each
+SQL statement is taken to be a transaction on its own, and it gets committed as soon
+as it is executed. Such automatic commit of individual SQL statements must be turned
+off if a transaction consisting of multiple SQL statements needs to be executed. How
+to turn off automatic commit depends on the specific SQL implementation, although
+many databases support the command set autocommit off.
+
+A better alternative, which is part of the SQL:1999 standard is to allow multiple SQL
+statements to be enclosed between the keywords begin atomic … end. All the statements
+between the keywords then form a single transaction, which is committed by default if
+execution reaches the end statement. 
+Only some databases, such as SQL Server, support the above syntax. 
+However, several other databases, such as MySQL and PostgreSQL,
+support a begin statement which starts a transaction containing all subsequent SQL
+statements, but do not support the end statement; instead, the transaction must be
+ended by either a commit work or a rollback work command.
+
+If you use a database such as Oracle, where the automatic commit is not the default
+for DML statements, be sure to issue a commit command after adding or modifying
+data, or else when you disconnect, all your database modifications will be rolled back!
+You should be aware that although Oracle has automatic commit turned off by default,
+that default may be overridden by local configuration settings.
+
+
+                  Integrity Constraints
+Integrity constraints ensure that changes made to the database by authorized users
+do not result in a loss of data consistency. Thus, integrity constraints guard against
+accidental damage to the database. 
+This is in contrast to security constraints, which guard against access to the database by unauthorized users.
+
+Examples of integrity constraints are:
+• An instructor name cannot be null.
+• No two instructors can have the same instructor ID.
+• Every department name in the course relation must have a matching department
+    name in the department relation.
+• The budget of a department must be greater than $0.00.
+
+In general, an integrity constraint can be an arbitrary predicate pertaining to the
+database. However, arbitrary predicates may be costly to test. Thus, most database
+systems allow one to specify only those integrity constraints that can be tested with
+minimal overhead.
+
+We have already seen some forms of integrity constraints in Section 3.2.2. We study
+some more forms of integrity constraints in this section. In Chapter 7, we study another
+form of integrity constraint, called functional dependencies, that is used primarily in the
+process of schema design.
+
+Integrity constraints are usually identified as part of the database schema design
+process and declared as part of the create table command used to create relations.
+However, integrity constraints can also be added to an existing relation by using the
+command alter table table-name add constraint, where constraint can be any constraint
+on the relation. 
+
+      When such a command is executed, the system first ensures that the relation satisfies the specified constraint. 
+      If it does, the constraint is added to the relation; if not, the command is rejected.
+
+                     Constraints on a Single Relation
+We described in Section 3.2 how to define tables using the create table command. 
+
+The create table command may also include integrity-constraint statements. In addition to
+the primary-key constraint, there are a number of other ones that can be included in
+the create table command. The allowed integrity constraints include
+              
+              • not null
+              • unique
+              • check(<predicate>)
+              
+We cover each of these types of constraints in the following sections.
+
+                  Not Null Constraint
+the null value is a member of all domains, and as a result
+it is a legal value for every attribute in SQL by default. 
+
+For certain attributes, however, null values may be inappropriate. 
+Consider a tuple in the student relation where name is null. 
+Such a tuple gives student information for an unknown student; thus, it does not
+contain useful information. Similarly, we would not want the department budget to be
+null. In cases such as this, we wish to forbid null values, and we can do so by restricting
+the domain of the attributes name and budget to exclude null values, by declaring it as
+follows:
+        
+        name varchar(20) not null
+        budget numeric(12,2) not null
+        
+The not null constraint prohibits the insertion of a null value for the attribute, and is
+an example of a domain constraint. 
+Any database modification that would cause a null
+to be inserted in an attribute declared to be not null generates an error diagnostic.
+There are many situations where we want to avoid null values. In particular, SQL
+prohibits null values in the primary key of a relation schema. Thus, in our university
+example, in the department relation, if the attribute dept_name is declared as the primary
+key for department, it cannot take a null value. As a result it would not need to be
+declared explicitly to be not null.    
+
+
+                  Unique Constraint
+SQL also supports an integrity constraint:
+
+    unique (A.....Am)
+
+The unique specification says that attributes A..Am
+form a superkey; that is, no
+two tuples in the relation can be equal on all the listed attributes. However, attributes
+declared as "unique" are permitted to be null unless they have explicitly been declared to
+be not null. Recall that a null value does not equal any other value. (The treatment of
+nulls here is the same as that of the unique construct defined in Section 3.8.4.)
+
+
+                The Check Clause
+When applied to a relation declaration, the clause check(P) specifies a predicate P that
+must be satisfied by every tuple in a relation.
+A common use of the check clause is to ensure that attribute values satisfy specified conditions, 
+in effect creating a powerful type system. For instance, a clause check
+(budget > 0) in the create table command for relation department would ensure that the
+value of budget is nonnegative.
+
+As another example, consider the following:
+            
+            create table section
+              (course_id varchar (8),
+              sec_id varchar (8),
+              semester varchar (6),
+              year numeric (4,0),
+              building varchar (15),
+              room_number varchar (7),
+              time_slot_id varchar (4),
+              primary key (course id, sec id, semester, year),
+              check (semester in ('Fall', 'Winter', 'Spring', 'Summer')));
+
+Here, we use the check clause to simulate an enumerated type by specifying that
+semester must be one of 'Fall', 'Winter', 'Spring', or 'Summer'. Thus, the check clause
+permits attribute domains to be restricted in powerful ways that most programming 
+language type systems do not permit.
+
+Null values present an interesting special case in the evaluation of a check clause.
+
+A check clause is satisfied if it is not false, so clauses that evaluate to unknown are not
+violations. If null values are not desired, a separate not null constraint must be specified.
+A check clause may appear on its own, as shown above, or as part of the declaration
+of an attribute.
+
+        create table department
+          (dept name varchar (20),
+          building varchar (15),
+          budget numeric (12,2) check (budget > 0),
+          primary key (dept name));
+
+The placement of a check clause is a matter of coding style. 
+
+Typically, constraints on the value of a single attribute are listed with that
+attribute, while more complex check clauses are listed separately at the end of a create
+table statement.
+
+The predicate in the check clause can, according to the SQL standard, be an arbitrary 
+predicate that can include a subquery. However, currently none of the widely
+used database products allows the predicate to contain a subquery.
+
+
+              Referential Integrity
+Often, we wish to ensure that a value that appears in one relation (the referencing relation) 
+for a given set of attributes also appears for a certain set of attributes in another
+relation (the referenced relation). 
+As we saw earlier, in Section 2.3, such conditions are called referential integrity constraints, and 
+foreign keys are a form of a referential integrity constraint where the referenced 
+attributes form a primary key of the referenced relation.
+
+Foreign keys can be specified as part of the SQL create table statement by using the
+foreign key clause. 
+We illustrate foreign-key declarations by using the SQL DDL definition of part of our university database.
+
+The definition of the course table has a declaration
+      
+      “foreign key (dept_name) references department”
+      
+This foreign-key declaration specifies that for each course tuple, the department_name
+specified in the tuple must exist in the department relation. Without this constraint, it
+is possible for a course to specify a nonexistent department name.
+By default, in SQL a foreign key references the primary-key attributes of the referenced table. 
+
+SQL also supports a version of the references clause where a list of attributes of the 
+referenced relation can be specified explicitly. 
+
+For example, the foreign key declaration for the course relation can be specified as:
+     
+      foreign key (dept_name) references department(dept_name)
+      
+The specified list of attributes must, however, be declared as a superkey of the
+referenced relation, using 
+          either a primary key constraint 
+          or a unique constraint. 
+
+A more general form of a referential-integrity constraint, where the referenced columns
+need not be a candidate key, cannot be directly specified in SQL. The SQL standard
+specifies other constructs that can be used to implement such constraints, which are
+described later; however, these alternative constructs are not supported by
+any of the widely used database systems.
+
+Note that the foreign key must reference a compatible set of attributes, that is, the
+          number of attributes must be the same 
+          and the data types of corresponding attributes must be compatible.
+
+We can use the following as part of a table definition to declare that an attribute
+forms a foreign key:
+
+      dept_name varchar(20) references department
+
+When a referential-integrity constraint is violated, the normal procedure is to reject
+the action that caused the violation (i.e., the transaction performing the update action
+is rolled back). However, a foreign key clause can specify that if a delete or update action
+on the referenced relation violates the constraint, then, instead of rejecting the action,
+the system must take steps to change the tuple in the referencing relation to restore the
+constraint. Consider this definition of an integrity constraint on the relation course:
+                
+                create table course
+                ( …
+                foreign key (dept_name) references department
+                      on delete cascade
+                      on update cascade,
+                … );
+
+
+
+                
+
+
+
+
+
+
+
+
+
+
+
+
+                      
