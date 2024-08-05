@@ -299,20 +299,76 @@ where count(ID) = select max(count(ID)) from aa;
 
 (g)
 with (
-select avg(salary)
+select avg(salary) as a1
 from works
 where works.company_name = "First Bank Corporation"
 ) as aa;
 
 with (
+select company_name, avg(salary) as a2
+from works
+group by compaany_name
+) as bb;
+
+select company_name
+from bb, aa
+where bb.a2 > aa.a1; 
+
+
+
+Question 10:
+(a)
+update employee
+set city = "Newton"
+where ID = '12345';
+
+
+(b)
+update works
+      case 
+      if salary>      
+      else salary = 0.03 * salary
+where company_name = "First Bank Corporation"      
+end
 
 
 
 
+Question 11:
+(a)
+select distinct Id, name
+from student
+where dept_name = 'Comp. Sci.'
 
 
+(b)
+with (
+      select takes.course_id
+      from student, takes
+      where student.ID = takes.ID
+
+) as aa;
+
+select * 
+from student
+where student.ID in 
+
+(c)
+select dept_name, max(salary)
+from instructor
+group by dept_name;
 
 
+(d)
+
+with (
+      select dept_name, max(salary) as a1
+      from instructor
+      group by dept_name;
+) as aa;
+
+select dept_name,min(a1)
+from aa;
 
 
 
