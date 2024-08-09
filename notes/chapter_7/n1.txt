@@ -1,0 +1,116 @@
+              Database Design Using the E-R Model
+
+In this chapter, we focus on the entity-relationship data model (ER), 
+which provides a means of identifying entities to be represented in the database
+and how those entities are related. Ultimately, the database design will be expressed in
+terms of a relational database design and an associated set of constraints.
+
+We show in this chapter how an E-R design can be transformed into a set of relation schemas and
+how some of the constraints can be captured in that design. Then, in Chapter 7, we
+consider in detail whether a set of relation schemas is a good or bad database design
+and study the process of creating good designs using a broader set of constraints. These
+two chapters cover the fundamental concepts of database design.
+
+
+            Overview of the Design Process
+The task of creating a database application is a complex one, involving 
+      design of the database schema, 
+      design of the programs that access and update the data, and 
+      design of a security scheme to control access to data. 
+      
+The needs of the users play a central role
+in the design process. In this chapter, we focus on the design of the database schema,
+although we briefly outline some of the other design tasks later in the chapter.
+
+
+              Design Phases
+For small applications, it may be feasible for a database designer who understands
+the application requirements to decide directly on the relations to be created, their
+attributes, and constraints on the relations. 
+
+However, such a direct design process is
+difficult for real-world applications, since they are often highly complex. Often no one
+person understands the complete data needs of an application. The database designer
+must interact with users of the application to understand the needs of the application, represent 
+them in a high-level fashion that can be understood by the users, and
+then translate the requirements into lower levels of the design. 
+
+A high-level data model serves the database designer by 
+providing a conceptual framework in which to specify,
+in a systematic fashion, the data requirements of the database users, and a database
+structure that fulfills these requirements.
+
+
+1) The initial phase of database design is to characterize fully the data needs of the
+prospective database users. The database designer needs to interact extensively
+with domain experts and users to carry out this task. The outcome of this phase is
+a specification of user requirements. While there are techniques for diagrammatically 
+representing user requirements, in this chapter we restrict ourselves to textual
+descriptions of user requirements.
+
+2) Next, the designer chooses a data model and, by applying the concepts of the 
+chosen data model, translates these requirements into a conceptual schema of the
+database. The schema developed at this conceptual-design phase provides a detailed 
+overview of the enterprise. The entity-relationship model, which we study in
+the rest of this chapter, is typically used to represent the conceptual design. Stated
+in terms of the entity-relationship model, the conceptual schema specifies the 
+entities that are represented in the database, the attributes of the entities, 
+the relationships among the entities, and constraints on the entities and 
+relationships. Typically, the conceptual-design phase results in the creation of an entity-relationship
+diagram that provides a graphic representation of the schema.
+
+The designer reviews the schema to confirm that all data requirements are
+indeed satisfied and are not in conflict with one another. She can also examine the
+design to remove any redundant features. Her focus at this point is on describing
+the data and their relationships, rather than on specifying physical storage details.
+
+3) A fully developed conceptual schema also indicates the functional requirements
+of the enterprise. In a specification of functional requirements, users describe the
+kinds of operations (or transactions) that will be performed on the data. Example
+operations include modifying or updating data, searching for and retrieving specific data, 
+and deleting data. At this stage of conceptual design, the designer can
+review the schema to ensure that it meets functional requirements.
+
+4) The process of moving from an abstract data model to the implementation of the
+database proceeds in two final design phases.
+  
+  ° In the "logical-design phase", the designer maps the high-level conceptual schema
+  onto the implementation data model of the database system that will be used.
+  The implementation data model is typically the relational data model, and this
+  step typically consists of mapping the conceptual schema defined using the
+  entity-relationship model into a relation schema.
+  
+  ° Finally, the designer uses the resulting system-specific database schema in the
+  subsequent "physical-design phase", in which the physical features of the database
+  are specified. These features include the form of file organization and choice
+  of index structures, discussed in Chapter 13 and Chapter 14.
+
+The physical schema of a database can be changed relatively easily after an application 
+has been built. However, changes to the logical schema are usually harder to carry
+out, since they may affect a number of queries and updates scattered across application
+code. It is therefore important to carry out the database design phase with care, before
+building the rest of the database application.
+
+
+                Design Alternatives
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  
